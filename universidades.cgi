@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use CGI qw(:standard);
 use Text::CSV;
+use Encode;
 
 # Ruta al archivo CSV
 my $file_path = "D:/xampp/cgi-bin/universidades.csv";
@@ -21,10 +22,13 @@ open my $fh, '<', $file_path or do {
     exit;
 };
 
-my $csv = Text::CSV->new({ sep_char => '|' });
+my $csv = Text::CSV->new({ sep_char => '|', binary => 1 });
 
 # Variable para almacenar las opciones del datalist
 my $options = "";
+
+# Hash para almacenar nombres únicos de universidades
+my %universidades;
 
 # Leer todas las líneas del archivo
 my @lines = <$fh>;
@@ -38,10 +42,16 @@ chomp $header;
 my @resultados;
 foreach my $line (@lines) {
     chomp $line;
+    $line = Encode::decode('UTF-8', $line);  # Decodificar la línea a UTF-8
     if ($csv->parse($line)) {
         my @fields = $csv->fields();
-        my $universidad = $fields[1];
-        $options .= "<option value=\"$universidad\">\n";
+        my $universidad = $fields[1]; # Asumiendo que el nombre de la universidad está en la segunda columna
+        
+        # Añadir al hash si no existe para evitar duplicados
+        unless (exists $universidades{$universidad}) {
+            $universidades{$universidad} = 1;
+            $options .= "<option value=\"$universidad\">\n";
+        }
 
         if ($universidad eq $universidad_input) {
             @resultados = (
